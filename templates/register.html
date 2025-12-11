@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block title %}Register - Mi Tienda{% endblock %}
+{% block content %}
+
+<h1 class="title">Crear cuenta</h1>
+
+<div style="max-width:420px; margin:0 auto;">
+    <div class="card">
+        <form method="POST">
+            <label>Nombre</label>
+            <input name="nombre" required style="width:100%; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #e6e6e9;">
+
+            <label style="margin-top:12px; display:block;">Email</label>
+            <input name="email" type="email" required style="width:100%; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #e6e6e9;">
+
+            <label style="margin-top:12px; display:block;">Contraseña</label>
+            <input name="password" type="password" required style="width:100%; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #e6e6e9;">
+
+            <div style="margin-top:14px;">
+                <button class="btn" type="submit">Registrarse</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

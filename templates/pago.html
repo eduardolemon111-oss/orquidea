@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pago</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .box {
+            background: white;
+            width: 400px;
+            margin: auto;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 18px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .btn {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: black;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="box">
+
+    <h2>Pago de Compra</h2>
+
+    <p><b>Cliente:</b> {{ usuario.nombre }}</p>
+    <p><b>Total a pagar:</b> ${{ total }}</p>
+
+    <!-- FORMULARIO REAL DEL PAGO -->
+    <form action="/pago" method="POST">
+
+        <label>Número de tarjeta</label>
+        <input type="text" name="tarjeta" required placeholder="**** **** **** 1234">
+
+        <label>Fecha</label>
+        <input type="text" name="fecha" required placeholder="MM/AA">
+
+        <label>CVC</label>
+        <input type="text" name="cvc" required placeholder="123">
+
+        <button class="btn" type="submit">Finalizar Pago</button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

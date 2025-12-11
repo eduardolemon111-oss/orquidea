@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+{% block title %}Productos - Flask shop{% endblock %}
+{% block content %}
+
+<h1 class="title" style="text-align:center; margin-bottom:25px;">Nuestros Productos Mas Innovadores</h1>
+
+<style>
+/* GRID */
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px;
+    padding: 10px;
+}
+
+/* CARD */
+.card {
+    background: #ffffff;
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.10);
+    transition: transform .2s;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+/* IMAGEN */
+.product-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+/* TEXTO */
+.meta {
+    color: #6b7280;
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+.price {
+    color: #059669;
+    font-weight: 700;
+    font-size: 18px;
+    margin-top: 10px;
+}
+
+/* INPUT CANTIDAD */
+.qty {
+    width: 70px;
+    padding: 7px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+}
+
+/* BOTÓN */
+.btn {
+    background: #2563eb;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.btn:hover {
+    background: #1e40af;
+}
+</style>
+
+<div class="grid-4">
+    {% for p in productos %}
+    <div class="card">
+
+        <!-- Imagen CORREGIDA -->
+        <img 
+            src="{{ url_for('static', filename='img/' ~ p[4]) }}" 
+            class="product-img" 
+            alt="{{ p[1] }}"
+        >
+
+        <!-- Nombre -->
+        <h3 style="margin-top:12px;">{{ p[1] }}</h3>
+
+        <!-- Descripción -->
+        <p class="meta">{{ p[2] }}</p>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:15px;">
+            
+            <!-- Precio -->
+            <div class="price">$ {{ p[3] }}</div>
+
+            <!-- Formulario Agregar -->
+            <form action="/agregar_carrito" method="POST" style="display:flex; gap:8px; align-items:center;">
+                <input type="hidden" name="id" value="{{ p[0] }}">
+                <input class="qty" type="number" name="cantidad" min="1" value="1">
+                <button class="btn" type="submit">Agregar al carrito</button>
+            </form>
+
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

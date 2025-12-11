@@ -1,0 +1,96 @@
+{% extends "layout.html" %}
+{% block title %}Carrito - Mi Tienda{% endblock %}
+{% block content %}
+
+<h1 style="text-align:center; margin-bottom:25px;">Tu Carrito</h1>
+
+<style>
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 25px;
+}
+.table th, .table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+}
+.product-img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+.btn {
+    background: #ef4444;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+.btn:hover {
+    background: #b91c1c;
+}
+.btn-blue {
+    background: #2563eb;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+}
+.btn-blue:hover {
+    background: #1e40af;
+}
+</style>
+
+{% if carrito %}
+<table class="table">
+    <tr>
+        <th>Producto</th>
+        <th>Imagen</th>
+        <th>Precio</th>
+        <th>Cantidad</th>
+        <th>Total</th>
+        <th>Acción</th>
+    </tr>
+
+    {% for item in carrito %}
+    <tr>
+        <td>{{ item[2] }}</td>
+
+        <td>
+            <img src="{{ url_for('static', filename='img/' ~ item[5]) }}" class="product-img">
+        </td>
+
+        <td>$ {{ item[4] }}</td>
+        <td>{{ item[6] }}</td>
+
+        <td>$ {{ item[4] * item[6] }}</td>
+
+        <td>
+            <form action="/quitar/{{ item[0] }}" method="POST">
+                <button class="btn" type="submit">Eliminar</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2 style="text-align:center; margin-bottom:25px;">
+    Total: ${{ total }}
+</h2>
+
+<div style="text-align:center;">
+    <a href="/finalizar"><button class="btn-blue">Pagar</button></a>
+</div>
+
+{% else %}
+<h3 style="text-align:center; margin-top:40px;">Tu carrito está vacío</h3>
+<div style="text-align:center;">
+    <a href="/productos"><button class="btn-blue">Ver productos</button></a>
+</div>
+{% endif %}
+
+{% endblock %}

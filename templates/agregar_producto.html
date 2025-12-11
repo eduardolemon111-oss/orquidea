@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Agregar Producto</title>
+</head>
+<body>
+
+    <h1>Agregar Producto</h1>
+
+    <form action="/producto/crear" method="POST">
+        <label>Nombre:</label><br>
+        <input type="text" name="nombre" required><br><br>
+
+        <label>Descripción:</label><br>
+        <textarea name="descripcion"></textarea><br><br>
+
+        <label>Precio:</label><br>
+        <input type="number" step="0.01" name="precio" required><br><br>
+
+        <label>URL de imagen:</label><br>
+        <input type="text" name="imagen"><br><br>
+
+        <button type="submit">Agregar</button>
+    </form>
+
+    <br>
+    <a href="/productos">Volver a productos</a>
+
+</body>
+</html>
