@@ -10,17 +10,23 @@
     border-collapse: collapse;
     margin-bottom: 25px;
 }
+
 .table th, .table td {
     padding: 12px;
     border-bottom: 1px solid #ddd;
     text-align: center;
+    vertical-align: middle;
 }
+
+/* 🔥 IMÁGENES CHIQUITAS Y PROPORCIONALES */
 .product-img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 10px;
+    width: 45px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
 }
+
 .btn {
     background: #ef4444;
     color: white;
@@ -29,9 +35,11 @@
     border: none;
     cursor: pointer;
 }
+
 .btn:hover {
     background: #b91c1c;
 }
+
 .btn-blue {
     background: #2563eb;
     color: white;
@@ -40,12 +48,14 @@
     border: none;
     cursor: pointer;
 }
+
 .btn-blue:hover {
     background: #1e40af;
 }
 </style>
 
 {% if carrito %}
+
 <table class="table">
     <tr>
         <th>Producto</th>
@@ -58,16 +68,16 @@
 
     {% for item in carrito %}
     <tr>
-        <td>{{ item[2] }}</td>
+        <td>{{ item[1] }}</td>
 
         <td>
-            <img src="{{ url_for('static', filename='img/' ~ item[5]) }}" class="product-img">
+            <img src="{{ url_for('static', filename='img/' ~ item[4]) }}"
+                 class="product-img">
         </td>
 
-        <td>$ {{ item[4] }}</td>
-        <td>{{ item[6] }}</td>
-
-        <td>$ {{ item[4] * item[6] }}</td>
+        <td>$ {{ item[2] }}</td>
+        <td>{{ item[3] }}</td>
+        <td>$ {{ item[2] * item[3] }}</td>
 
         <td>
             <form action="/quitar/{{ item[0] }}" method="POST">
@@ -83,14 +93,16 @@
 </h2>
 
 <div style="text-align:center;">
-    <a href="/finalizar"><button class="btn-blue">Pagar</button></a>
+    <a href="/pago"><button class="btn-blue">Pagar</button></a>
 </div>
 
 {% else %}
+
 <h3 style="text-align:center; margin-top:40px;">Tu carrito está vacío</h3>
 <div style="text-align:center;">
     <a href="/productos"><button class="btn-blue">Ver productos</button></a>
 </div>
+
 {% endif %}
 
 {% endblock %}

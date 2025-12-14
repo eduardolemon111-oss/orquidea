@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <title>{% block title %}Mi Tienda{% endblock %}</title>
 
+    <!-- aquí se conserva todo tu CSS y fuentes originales -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
     <style>
         :root{
             --bg:#ffffff;
             --muted:#6b7280;
-            --accent:#0ea5a9; /* azul-verde */
+            --accent:#0ea5a9;
             --card:#ffffff;
             --glass: rgba(255,255,255,0.7);
             --shadow: 0 8px 20px rgba(16,24,40,0.08);
@@ -47,33 +47,47 @@
 
         footer { text-align:center; color:var(--muted); padding:28px 0; font-size:14px; }
 
-        /* small responsive tweaks */
-        @media (max-width:900px){
-            .grid-4 { grid-template-columns: repeat(2,1fr); }
-        }
-        @media (max-width:600px){
-            .grid-4 { grid-template-columns: 1fr; }
-            nav { padding:12px 16px; }
-        }
+        @media (max-width:900px){ .grid-4 { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width:600px){ .grid-4 { grid-template-columns: 1fr; } nav { padding:12px 16px; } }
     </style>
+
+    <!-- admin overrides: se cargan solo si existe usuario y es admin -->
+    {% if usuario and usuario.es_admin %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-overrides.css') }}">
+    {% endif %}
 
     {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% if usuario and usuario.es_admin %}admin{% endif %}">
 <nav>
-    <div class="logo">Flask Shop</div>
     <div class="nav-links">
-        <a href="/productos">Nuestros Productos</a>
-        <a href="/carrito"> Tu Carrito</a>
-        {% if session.get('usuario') %}
-    <span style="margin-left:12px; color:#374151;">Hola, {{ session['usuario']['nombre'] }}</span>
-    <a href="/logout">Cerrar sesion</a>
-{% else %}
-    <a href="/login">Iniciar sesion</a>
-    <a href="/register">Registrarse</a>
-{% endif %}
+    <a href="/productos">Nuestros Productos</a>
+    <a href="/carrito">Tu Carrito</a>
 
-    </div>
+    {% if usuario and usuario.es_admin %}
+        <a href="/admin/productos"
+           style="
+            background:#111;
+            color:white;
+            padding:6px 14px;
+            border-radius:10px;
+            margin-left:10px;
+           ">
+            ADMIN
+        </a>
+    {% endif %}
+
+    {% if session.get('usuario') %}
+        <span style="margin-left:12px; color:#374151;">
+            Hola, {{ session['usuario']['nombre'] }}
+        </span>
+        <a href="/logout">Cerrar sesión</a>
+    {% else %}
+        <a href="/login">Iniciar sesión</a>
+        <a href="/register">Registrarse</a>
+    {% endif %}
+</div>
+
 </nav>
 
 <div class="container">

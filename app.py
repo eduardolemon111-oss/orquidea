@@ -1,151 +1,142 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+BACK_URL_BASE = os.getenv("BACK_URL_BASE")
+if not BACK_URL_BASE:
+    raise Exception("BACK_URL_BASE no está definido")
+
+
+
+import os
+import mercadopago
 import psycopg2
+from functools import wraps
+from flask import Flask, render_template, request, redirect, session, url_for
 
 app = Flask(__name__)
-app.secret_key = "superclave_personalizada_987"
+app.secret_key = os.getenv("SECRET_KEY", "dev_secret")
 
-
+# ---------------------------------------
+#   CONEXIÓN DB
+# ---------------------------------------
 def conectar():
     return psycopg2.connect(
-        dbname="flask_shop",
-        user="tienda_user",
-        password="12345",
-        host="localhost"
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT")
     )
 
+# ---------------------------------------
+#   SOLO ADMIN
+# ---------------------------------------
+def solo_admin(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "usuario" not in session or not session["usuario"].get("es_admin"):
+            return redirect("/productos")
+        return f(*args, **kwargs)
+    return wrapper
 
+# ---------------------------------------
+#   PRODUCTOS
+# ---------------------------------------
 @app.route("/")
 def inicio():
     return redirect("/productos")
-
 
 @app.route("/productos")
 def productos():
     conn = conectar()
     cur = conn.cursor()
-
     cur.execute("SELECT id, nombre, descripcion, precio, imagen FROM productos ORDER BY id")
     productos = cur.fetchall()
-
     cur.close()
     conn.close()
+    return render_template("productos.html", productos=productos, usuario=session.get("usuario"))
 
-    return render_template("productos.html", productos=productos)
-
-
+# ---------------------------------------
+#   CARRITO
+# ---------------------------------------
 @app.route("/agregar_carrito", methods=["POST"])
 def agregar_carrito():
     if "usuario" not in session:
-        return redirect("/login?next=productos")
-
-    usuario_id = session["usuario"]["id"]
-    producto_id = int(request.form["id"])
-    cantidad = int(request.form.get("cantidad", 1))
+        return redirect("/login")
 
     conn = conectar()
     cur = conn.cursor()
-
     cur.execute("""
-        SELECT id FROM carrito
-        WHERE usuario_id = %s AND producto_id = %s
-    """, (usuario_id, producto_id))
-
-    row = cur.fetchone()
-
-    if row:
-        cur.execute("""
-            UPDATE carrito
-            SET cantidad = cantidad + %s
-            WHERE usuario_id = %s AND producto_id = %s
-        """, (cantidad, usuario_id, producto_id))
-    else:
-        cur.execute("""
-            INSERT INTO carrito (usuario_id, producto_id, cantidad)
-            VALUES (%s, %s, %s)
-        """, (usuario_id, producto_id, cantidad))
-
+        INSERT INTO carrito (usuario_id, producto_id, cantidad)
+        VALUES (%s, %s, %s)
+    """, (
+        session["usuario"]["id"],
+        request.form["id"],
+        request.form.get("cantidad", 1)
+    ))
     conn.commit()
     cur.close()
     conn.close()
-
     return redirect("/productos")
 
-
 @app.route("/carrito")
-def carrito():
+def ver_carrito():
     if "usuario" not in session:
         return redirect("/login")
 
-    usuario_id = session["usuario"]["id"]
-
     conn = conectar()
     cur = conn.cursor()
-
     cur.execute("""
-        SELECT carrito.id,
-               productos.id,
-               productos.nombre,
-               productos.descripcion,
-               productos.precio,
-               productos.imagen,
-               carrito.cantidad
+        SELECT 
+            carrito.id,
+            productos.nombre,
+            productos.precio,
+            carrito.cantidad,
+            productos.imagen
         FROM carrito
         JOIN productos ON carrito.producto_id = productos.id
-        WHERE carrito.usuario_id = %s
-        ORDER BY carrito.id
-    """, (usuario_id,))
-
+        WHERE carrito.usuario_id=%s
+    """, (session["usuario"]["id"],))
     carrito = cur.fetchall()
-
     cur.close()
     conn.close()
 
-    total = sum(item[4] * item[6] for item in carrito)
-
+    total = sum(float(p) * int(c) for _, _, p, c, _ in carrito)
     return render_template("carrito.html", carrito=carrito, total=total)
 
+@app.route("/quitar/<int:carrito_id>", methods=["POST"])
+def quitar(carrito_id):
+    if "usuario" not in session:
+        return redirect("/login")
 
-@app.route("/quitar/<int:id>", methods=["POST"])
-def quitar(id):
     conn = conectar()
     cur = conn.cursor()
-
-    cur.execute("DELETE FROM carrito WHERE id = %s", (id,))
+    cur.execute("""
+        DELETE FROM carrito
+        WHERE id=%s AND usuario_id=%s
+    """, (carrito_id, session["usuario"]["id"]))
     conn.commit()
-
     cur.close()
     conn.close()
 
     return redirect("/carrito")
 
-
-@app.route("/finalizar")
-def finalizar():
-    if "usuario" not in session:
-        return redirect("/login?next=pago")
-
-    return redirect("/pago")
-
-
+# ---------------------------------------
+#   LOGIN
+# ---------------------------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    next_page = request.args.get("next", "productos")
-
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-
         conn = conectar()
         cur = conn.cursor()
-
         cur.execute("""
-            SELECT id, nombre, email, password
+            SELECT id, nombre, email, es_admin
             FROM usuarios
-            WHERE email = %s AND password = %s
-        """, (email, password))
-
+            WHERE email=%s AND password=%s
+        """, (request.form["email"], request.form["password"]))
         user = cur.fetchone()
-
         cur.close()
         conn.close()
 
@@ -153,102 +144,104 @@ def login():
             session["usuario"] = {
                 "id": user[0],
                 "nombre": user[1],
-                "email": user[2]
+                "email": user[2],
+                "es_admin": user[3]
             }
-            return redirect("/" + next_page)
+            return redirect("/productos")
 
-        return "Usuario o contraseña incorrectos"
+    return render_template("login.html")
 
-    return render_template("login.html", next=next_page)
-
-
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    next_page = request.args.get("next", "productos")
-
-    if request.method == "POST":
-        nombre = request.form.get("nombre")
-        email = request.form.get("email")
-        password = request.form.get("password")
-
-        conn = conectar()
-        cur = conn.cursor()
-
-        cur.execute("""
-            INSERT INTO usuarios (nombre, email, password)
-            VALUES (%s, %s, %s)
-        """, (nombre, email, password))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return redirect(url_for("login", next=next_page))
-
-    return render_template("register.html", next=next_page)
-
+# ---------------------------------------
+#   MERCADO PAGO
+# ---------------------------------------
+mp = mercadopago.SDK(os.getenv("MP_ACCESS_TOKEN"))
 
 @app.route("/pago", methods=["GET", "POST"])
 def pago():
     if "usuario" not in session:
-        return redirect("/login?next=pago")
-
-    usuario = session["usuario"]
-    usuario_id = usuario["id"]
-
-    conn = conectar()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT carrito.id,
-               productos.id,
-               productos.nombre,
-               productos.precio,
-               productos.imagen,
-               carrito.cantidad
-        FROM carrito
-        JOIN productos ON carrito.producto_id = productos.id
-        WHERE carrito.usuario_id = %s
-        ORDER BY carrito.id
-    """, (usuario_id,))
-
-    items = cur.fetchall()
-
-    cur.close()
-    conn.close()
-
-    total = sum(item[3] * item[5] for item in items)
-
-    if request.method == "POST":
-        return redirect("/pago_exitoso")
-
-    return render_template("pago.html", usuario=usuario, productos=items, total=total)
-
-
-@app.route("/pago_exitoso")
-def pago_exitoso():
-    if "usuario" not in session:
         return redirect("/login")
 
-    usuario_id = session["usuario"]["id"]
-
     conn = conectar()
     cur = conn.cursor()
-
-    cur.execute("DELETE FROM carrito WHERE usuario_id = %s", (usuario_id,))
-    conn.commit()
-
+    cur.execute("""
+        SELECT productos.nombre, productos.precio, carrito.cantidad
+        FROM carrito
+        JOIN productos ON carrito.producto_id = productos.id
+        WHERE carrito.usuario_id=%s
+    """, (session["usuario"]["id"],))
+    items = cur.fetchall()
     cur.close()
     conn.close()
 
-    return render_template("exito.html")
+    if not items:
+        return redirect("/carrito")
+
+    total = sum(float(p) * int(c) for _, p, c in items)
+
+    if request.method == "POST":
+        preference = mp.preference().create({
+            "items": [{
+                "title": nombre,
+                "quantity": int(cantidad),
+                "unit_price": float(precio),
+                "currency_id": "MXN"
+            } for nombre, precio, cantidad in items],
+
+            "payer": {
+                "email": session["usuario"]["email"]
+            },
+
+            "back_urls": {
+                "success": f"{BACK_URL_BASE}/pago_exitoso",
+                "failure": f"{BACK_URL_BASE}/pago_error",
+                "pending": f"{BACK_URL_BASE}/pago_pendiente"
+            },
+
+            # 🔥 CLAVE PARA QUE APAREZCA EN ACTIVIDAD
+            "notification_url": f"{BACK_URL_BASE}/mp/webhook",
+            "external_reference": f"user_{session['usuario']['id']}"
+        })
+
+        pref_resp = preference["response"]
+
+        if "init_point" in pref_resp:
+            return redirect(pref_resp["init_point"])
+        else:
+            print(pref_resp)
+            return "Error al generar la preferencia de pago (revisa consola)"
+
+    return render_template("pago.html", total=total, usuario=session.get("usuario"))
 
 
+
+# ---------------------------------------
+#   RESULTADO DE PAGO
+# ---------------------------------------
+@app.route("/pago_exitoso")
+def pago_exitoso():
+    return "Pago aprobado ✅"
+
+@app.route("/pago_error")
+def pago_error():
+    return "Pago rechazado ❌"
+
+@app.route("/pago_pendiente")
+def pago_pendiente():
+    return "Pago pendiente ⏳"
+
+# -------------------------------
+@app.route("/mp/webhook", methods=["POST"])
+def mp_webhook():
+    print("📩 Webhook Mercado Pago:", request.json)
+    return "OK", 200
+# ---------------------------------------
+#   LOGOUT
+# ---------------------------------------
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/productos")
 
-
+# ---------------------------------------
 if __name__ == "__main__":
     app.run(debug=True)

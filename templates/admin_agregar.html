@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block title %}Agregar Producto{% endblock %}
+{% block content %}
+
+<h1 style="text-align:center; color:white;">Agregar Producto</h1>
+
+<style>
+body { background:#0c0c0c !important; }
+
+.form-box {
+    width: 450px;
+    margin: 0 auto;
+    background: #1a1a1a;
+    padding: 25px;
+    border-radius: 15px;
+    color: white;
+    box-shadow: 0 3px 12px rgba(255,255,255,0.05);
+}
+
+.input-field {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 18px;
+    border-radius: 10px;
+    border: none;
+    background: #2e2e2e;
+    color: white;
+}
+
+.btn-save {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: #059669;
+    color: white;
+    cursor: pointer;
+}
+.btn-save:hover { background:#047857; }
+</style>
+
+<div class="form-box">
+    <form method="POST">
+
+        <input class="input-field" name="nombre" placeholder="Nombre del producto" required>
+
+        <textarea class="input-field" name="descripcion" placeholder="Descripción del producto" required></textarea>
+
+        <input class="input-field" type="number" name="precio" placeholder="Precio" required>
+
+        <input class="input-field" name="imagen" placeholder="Nombre del archivo de imagen.jpg" required>
+
+        <button class="btn-save">Guardar</button>
+    </form>
+</div>
+
+{% endblock %}

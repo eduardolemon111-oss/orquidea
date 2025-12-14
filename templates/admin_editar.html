@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% block title %}Editar Producto{% endblock %}
+{% block content %}
+
+<h1 style="text-align:center; color:white;">Editar Producto</h1>
+
+<style>
+body { background:#0c0c0c !important; }
+
+.form-box {
+    width: 450px;
+    margin: 0 auto;
+    background: #1a1a1a;
+    padding: 25px;
+    border-radius: 15px;
+    color: white;
+}
+
+.input-field {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 18px;
+    border-radius: 10px;
+    border: none;
+    background: #2e2e2e;
+    color: white;
+}
+
+.btn-save {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: #2563eb;
+    color: white;
+}
+.btn-save:hover { background:#1e40af; }
+</style>
+
+<div class="form-box">
+    <form method="POST">
+
+        <input class="input-field" name="nombre" value="{{ producto[1] }}" required>
+
+        <textarea class="input-field" name="descripcion" required>{{ producto[2] }}</textarea>
+
+        <input class="input-field" type="number" name="precio" value="{{ producto[3] }}" required>
+
+        <input class="input-field" name="imagen" value="{{ producto[4] }}" required>
+
+        <button class="btn-save">Guardar cambios</button>
+    </form>
+</div>
+
+{% endblock %}
