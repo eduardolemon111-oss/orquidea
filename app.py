@@ -232,3 +232,5 @@ def mp_webhook():
 def logout():
     session.clear()
     return redirect("/productos")
+
+
