@@ -1,34 +1,24 @@
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-BACK_URL_BASE = os.getenv("BACK_URL_BASE")
-if not BACK_URL_BASE:
-    raise Exception("BACK_URL_BASE no está definido")
-
-
-
 import os
 import mercadopago
 import psycopg2
 from functools import wraps
 from flask import Flask, render_template, request, redirect, session, url_for
 
+# ---------------------------------------
+#   CONFIG GLOBAL
+# ---------------------------------------
+BACK_URL_BASE = os.getenv("BACK_URL_BASE", "http://localhost:5000")
+
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev_secret")
 
+mp = mercadopago.SDK(os.getenv("MP_ACCESS_TOKEN"))
+
 # ---------------------------------------
-#   CONEXIÓN DB
+#   CONEXIÓN DB (RENDER)
 # ---------------------------------------
 def conectar():
-    return psycopg2.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT")
-    )
+    return psycopg2.connect(os.getenv("DATABASE_URL"))
 
 # ---------------------------------------
 #   SOLO ADMIN
@@ -42,7 +32,7 @@ def solo_admin(f):
     return wrapper
 
 # ---------------------------------------
-#   PRODUCTOS
+#   RUTAS BÁSICAS
 # ---------------------------------------
 @app.route("/")
 def inicio():
@@ -52,7 +42,11 @@ def inicio():
 def productos():
     conn = conectar()
     cur = conn.cursor()
-    cur.execute("SELECT id, nombre, descripcion, precio, imagen FROM productos ORDER BY id")
+    cur.execute("""
+        SELECT id, nombre, descripcion, precio, imagen
+        FROM productos
+        ORDER BY id
+    """)
     productos = cur.fetchall()
     cur.close()
     conn.close()
@@ -120,7 +114,6 @@ def quitar(carrito_id):
     conn.commit()
     cur.close()
     conn.close()
-
     return redirect("/carrito")
 
 # ---------------------------------------
@@ -154,8 +147,6 @@ def login():
 # ---------------------------------------
 #   MERCADO PAGO
 # ---------------------------------------
-mp = mercadopago.SDK(os.getenv("MP_ACCESS_TOKEN"))
-
 @app.route("/pago", methods=["GET", "POST"])
 def pago():
     if "usuario" not in session:
@@ -197,7 +188,6 @@ def pago():
                 "pending": f"{BACK_URL_BASE}/pago_pendiente"
             },
 
-            # 🔥 CLAVE PARA QUE APAREZCA EN ACTIVIDAD
             "notification_url": f"{BACK_URL_BASE}/mp/webhook",
             "external_reference": f"user_{session['usuario']['id']}"
         })
@@ -208,14 +198,12 @@ def pago():
             return redirect(pref_resp["init_point"])
         else:
             print(pref_resp)
-            return "Error al generar la preferencia de pago (revisa consola)"
+            return "Error al generar la preferencia"
 
     return render_template("pago.html", total=total, usuario=session.get("usuario"))
 
-
-
 # ---------------------------------------
-#   RESULTADO DE PAGO
+#   RESULTADOS DE PAGO
 # ---------------------------------------
 @app.route("/pago_exitoso")
 def pago_exitoso():
@@ -229,11 +217,14 @@ def pago_error():
 def pago_pendiente():
     return "Pago pendiente ⏳"
 
-# -------------------------------
+# ---------------------------------------
+#   WEBHOOK MP
+# ---------------------------------------
 @app.route("/mp/webhook", methods=["POST"])
 def mp_webhook():
     print("📩 Webhook Mercado Pago:", request.json)
     return "OK", 200
+
 # ---------------------------------------
 #   LOGOUT
 # ---------------------------------------
@@ -241,7 +232,3 @@ def mp_webhook():
 def logout():
     session.clear()
     return redirect("/productos")
-
-# ---------------------------------------
-if __name__ == "__main__":
-    app.run(debug=True)
