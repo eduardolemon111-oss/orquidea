@@ -1,0 +1,4 @@
+Flask
+gunicorn
+mercadopago
+psycopg2-binary
