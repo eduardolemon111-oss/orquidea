@@ -141,6 +141,8 @@ def quitar(carrito_id):
 # ---------------------------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    next_url = request.args.get("next") or request.form.get("next")
+
     if request.method == "POST":
         conn = conectar()
         cur = conn.cursor()
@@ -148,8 +150,10 @@ def login():
             SELECT id, nombre, email, es_admin
             FROM usuarios
             WHERE email=%s AND password=%s
-        """, (request.form["email"], request.form["password"]))
-
+        """, (
+            request.form["email"],
+            request.form["password"]
+        ))
         user = cur.fetchone()
         cur.close()
         conn.close()
@@ -161,9 +165,16 @@ def login():
                 "email": user[2],
                 "es_admin": user[3]
             }
-            return redirect("/productos")
+            return redirect(next_url or "/productos")
 
-    return render_template("login.html")
+        # ❌ LOGIN FALLIDO
+        return render_template(
+            "login.html",
+            error="Correo o contraseña incorrectos",
+            next=next_url
+        )
+
+    return render_template("login.html", next=next_url)
 
 # ---------------------------------------
 #   PAGO MERCADO PAGO
