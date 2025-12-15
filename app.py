@@ -171,6 +171,7 @@ def login():
             }
             return redirect(next_url or "/productos")
 
+        # ❌ LOGIN FALLIDO
         return render_template(
             "login.html",
             error="Correo o contraseña incorrectos",
@@ -178,6 +179,7 @@ def login():
         )
 
     return render_template("login.html", next=next_url)
+
 
 
 # ---------------------------------------
