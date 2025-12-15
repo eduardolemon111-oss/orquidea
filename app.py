@@ -57,6 +57,7 @@ def productos():
 
     print("PRODUCTOS DESDE RENDER:", productos)
 
+
     cur.close()
     conn.close()
 
