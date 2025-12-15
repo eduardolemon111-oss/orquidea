@@ -54,13 +54,9 @@ def productos():
         ORDER BY id
     """)
     productos = cur.fetchall()
-
     print("PRODUCTOS DESDE RENDER:", productos)
-
-
     cur.close()
     conn.close()
-
     return render_template(
         "productos.html",
         productos=productos,
@@ -129,16 +125,12 @@ def quitar(carrito_id):
         DELETE FROM carrito
         WHERE id=%s AND usuario_id=%s
     """, (carrito_id, session["usuario"]["id"]))
-
     conn.commit()
     cur.close()
     conn.close()
 
     return redirect("/carrito")
 
-# ---------------------------------------
-#   LOGIN
-# ---------------------------------------
 # ---------------------------------------
 #   LOGIN
 # ---------------------------------------
@@ -149,6 +141,8 @@ def login():
     if request.method == "POST":
         email = request.form["email"].strip()
         password = request.form["password"].strip()
+
+        print("DEBUG LOGIN:", repr(email), repr(password))  # depuración
 
         conn = conectar()
         cur = conn.cursor()
@@ -171,7 +165,6 @@ def login():
             }
             return redirect(next_url or "/productos")
 
-        # ❌ LOGIN FALLIDO
         return render_template(
             "login.html",
             error="Correo o contraseña incorrectos",
@@ -179,8 +172,6 @@ def login():
         )
 
     return render_template("login.html", next=next_url)
-
-
 
 # ---------------------------------------
 #   PAGO MERCADO PAGO
