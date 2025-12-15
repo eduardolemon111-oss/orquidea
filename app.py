@@ -237,4 +237,21 @@ def logout():
     session.clear()
     return redirect("/productos")
 
+@app.route("/productos")
+def productos():
+    conn = conectar()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, nombre, descripcion, precio, imagen
+        FROM productos
+        ORDER BY id
+    """)
+    productos = cur.fetchall()
+
+    print("PRODUCTOS DESDE RENDER:", productos)
+
+    cur.close()
+    conn.close()
+    return render_template("productos.html", productos=productos)
+
 
