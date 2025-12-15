@@ -58,13 +58,15 @@
 
     {% block head %}{% endblock %}
 </head>
-<body class="{% if usuario and usuario.es_admin %}admin{% endif %}">
+<body class="{% if usuario and usuario['es_admin'] %}admin{% endif %}">
+
 <nav>
     <div class="nav-links">
     <a href="/productos">Nuestros Productos</a>
     <a href="/carrito">Tu Carrito</a>
 
-    {% if usuario and usuario.es_admin %}
+    {% if usuario and usuario['es_admin'] %}
+
         <a href="/admin/productos"
            style="
             background:#111;
