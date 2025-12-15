@@ -2,7 +2,7 @@ import os
 import mercadopago
 import psycopg2
 from functools import wraps
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session
 
 # ---------------------------------------
 #   CONFIG GLOBAL
@@ -15,14 +15,13 @@ app.secret_key = os.getenv("SECRET_KEY", "dev_secret")
 mp = mercadopago.SDK(os.getenv("MP_ACCESS_TOKEN"))
 
 # ---------------------------------------
-#   CONEXIÓN DB (RENDER)
+#   CONEXIÓN DB (RENDER / NEON)
 # ---------------------------------------
 def conectar():
     return psycopg2.connect(
         os.getenv("DATABASE_URL"),
         sslmode="require"
     )
-
 
 # ---------------------------------------
 #   SOLO ADMIN
@@ -36,12 +35,15 @@ def solo_admin(f):
     return wrapper
 
 # ---------------------------------------
-#   RUTAS BÁSICAS
+#   RUTA PRINCIPAL
 # ---------------------------------------
 @app.route("/")
 def inicio():
     return redirect("/productos")
 
+# ---------------------------------------
+#   PRODUCTOS
+# ---------------------------------------
 @app.route("/productos")
 def productos():
     conn = conectar()
@@ -52,9 +54,17 @@ def productos():
         ORDER BY id
     """)
     productos = cur.fetchall()
+
+    print("PRODUCTOS DESDE RENDER:", productos)
+
     cur.close()
     conn.close()
-    return render_template("productos.html", productos=productos, usuario=session.get("usuario"))
+
+    return render_template(
+        "productos.html",
+        productos=productos,
+        usuario=session.get("usuario")
+    )
 
 # ---------------------------------------
 #   CARRITO
@@ -77,6 +87,7 @@ def agregar_carrito():
     conn.commit()
     cur.close()
     conn.close()
+
     return redirect("/productos")
 
 @app.route("/carrito")
@@ -97,11 +108,13 @@ def ver_carrito():
         JOIN productos ON carrito.producto_id = productos.id
         WHERE carrito.usuario_id=%s
     """, (session["usuario"]["id"],))
+
     carrito = cur.fetchall()
     cur.close()
     conn.close()
 
     total = sum(float(p) * int(c) for _, _, p, c, _ in carrito)
+
     return render_template("carrito.html", carrito=carrito, total=total)
 
 @app.route("/quitar/<int:carrito_id>", methods=["POST"])
@@ -115,9 +128,11 @@ def quitar(carrito_id):
         DELETE FROM carrito
         WHERE id=%s AND usuario_id=%s
     """, (carrito_id, session["usuario"]["id"]))
+
     conn.commit()
     cur.close()
     conn.close()
+
     return redirect("/carrito")
 
 # ---------------------------------------
@@ -133,6 +148,7 @@ def login():
             FROM usuarios
             WHERE email=%s AND password=%s
         """, (request.form["email"], request.form["password"]))
+
         user = cur.fetchone()
         cur.close()
         conn.close()
@@ -149,7 +165,7 @@ def login():
     return render_template("login.html")
 
 # ---------------------------------------
-#   MERCADO PAGO
+#   PAGO MERCADO PAGO
 # ---------------------------------------
 @app.route("/pago", methods=["GET", "POST"])
 def pago():
@@ -164,6 +180,7 @@ def pago():
         JOIN productos ON carrito.producto_id = productos.id
         WHERE carrito.usuario_id=%s
     """, (session["usuario"]["id"],))
+
     items = cur.fetchall()
     cur.close()
     conn.close()
@@ -207,7 +224,7 @@ def pago():
     return render_template("pago.html", total=total, usuario=session.get("usuario"))
 
 # ---------------------------------------
-#   RESULTADOS DE PAGO
+#   RESPUESTAS DE PAGO
 # ---------------------------------------
 @app.route("/pago_exitoso")
 def pago_exitoso():
@@ -222,7 +239,7 @@ def pago_pendiente():
     return "Pago pendiente ⏳"
 
 # ---------------------------------------
-#   WEBHOOK MP
+#   WEBHOOK MERCADO PAGO
 # ---------------------------------------
 @app.route("/mp/webhook", methods=["POST"])
 def mp_webhook():
@@ -236,22 +253,3 @@ def mp_webhook():
 def logout():
     session.clear()
     return redirect("/productos")
-
-@app.route("/productos")
-def productos():
-    conn = conectar()
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT id, nombre, descripcion, precio, imagen
-        FROM productos
-        ORDER BY id
-    """)
-    productos = cur.fetchall()
-
-    print("PRODUCTOS DESDE RENDER:", productos)
-
-    cur.close()
-    conn.close()
-    return render_template("productos.html", productos=productos)
-
-
