@@ -18,7 +18,11 @@ mp = mercadopago.SDK(os.getenv("MP_ACCESS_TOKEN"))
 #   CONEXIÓN DB (RENDER)
 # ---------------------------------------
 def conectar():
-    return psycopg2.connect(os.getenv("DATABASE_URL"))
+    return psycopg2.connect(
+        os.getenv("DATABASE_URL"),
+        sslmode="require"
+    )
+
 
 # ---------------------------------------
 #   SOLO ADMIN
